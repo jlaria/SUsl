@@ -1,0 +1,314 @@
+---
+title: "Practice time!"
+output:
+  html_document:
+    highlight: kate
+    theme: lumen
+    toc: no
+    toc_float: no
+  pdf_document:
+    toc: no
+header-includes: \usepackage{xcolor}
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = F, cache = T, fig.width = 4, fig.height = 3, fig.align = "center")
+```
+
+# Logistic Regression in R
+
+## A simple example
+
+In this section, we will use the Social Networks Ads data, that we have previously seen when we studied svm's.
+
+```{r, eval=FALSE, include=FALSE}
+data = read.csv("source/Social_Network_Ads.csv")
+rownames(data) = data$User.ID
+data$User.ID = NULL
+
+data$Purchased = factor(ifelse(data$Purchased==1, "yes", "no"))
+save(data, file = "source/Ads.RData")
+```
+
+We start loading the data set into R.
+
+```{r}
+load("source/Ads.RData")
+
+library(ggplot2)
+ggplot(data) + aes(x = Age, y = EstimatedSalary, color = Gender)+geom_point()
+
+```
+
+Remember, in logistic regression, we approximate $p$ in terms of the linear predictor
+$$
+\eta = \beta_0 + \beta_1 X_1+ \beta_2 X_2 + \ldots \beta_p X_p.
+$$
+The objective is to choose the optimal $\beta_0, \beta_1, \ldots \beta_p$ such that 
+$$
+R(\mathbf{\beta}) = \sum_{i=1}^{N} \log\left( 1 + \exp(\mathbf{x}_i^T \mathbf{\beta}) \right) - \sum_{i=1}^{N} y_i \mathbf{x}_i^T \mathbf{\beta}
+$$
+is minimized. So, the model matrix $X$ should have 1's in the first column, with $p+1$ columns, one for each variable. 
+
+What about categorical variables?
+
+Categorical (factor) variables should be converted to dummy variables. Function `glm` automatically does that for us, but we can manually perform that conversion with function `model.matrix`.
+
+```{r}
+X = model.matrix(Purchased~., data)
+head(X)
+```
+
+To estimate the $\beta$ parameter from the logistic regression model, we use the following syntax.
+
+```{r}
+fit.logit = glm(Purchased~., data = data, family = "binomial")
+summary(fit.logit)
+```
+
+Let's perform some simple cross validation to evaluate the model.
+
+```{r}
+source("https://raw.githubusercontent.com/jlaria/dsclass/master/R/prop.split.R")
+
+# Split the data
+idx = prop.split(400, c(0.6, 0.4))
+data.train = data[idx[[1]],]
+data.validate = data[idx[[2]],]
+
+# Train the model
+fit.logit = glm(Purchased~., data.train, family = "binomial")
+summary(fit.logit)
+# Select variables
+fit.logit = glm(Purchased~Age+EstimatedSalary, data.train, family = "binomial")
+summary(fit.logit)
+
+# Validate it
+pred = predict(fit.logit, newdata = data.validate, type = "response")
+y_pred = ifelse(pred>0.7, "yes", "no")
+t = table(y_pred, data.validate$Purchased); t
+ccr = sum(diag(t))/sum(t); ccr
+
+
+```
+
+## Suicides Data set
+
+We start loading the data set.
+```{r}
+load("source/data_suic.RData")
+```
+
+A first inspection of `data` reveals some interesting details. This whole data set is binary, and the response variable, `INT_ATUAL`, has a proportion of ones of `r mean(data$INT_ACTUAL==1)`.
+
+This means that the worst accuracy we should expect is higger than `r 100-mean(data$INT_ACTUAL==1)*100`%.
+
+### A first approximation 
+
+Let's fit a logistic model on this data.
+
+```{r}
+fit.logit = glm(INT_ACTUAL~., data, family = "binomial")
+summary(fit.logit)
+```
+
+In this first approximation, we will avoid variable selection.
+
+```{r}
+pred = predict(fit.logit, newdata = data, type="response")
+y_pred = ifelse(pred>0.5, 1, 0)
+t = table(y_pred, data$INT_ACTUAL); t
+ccr = sum(diag(t))/sum(t); ccr
+```
+
+We got as high as 87% of correct classification rate. Of course, this is the trainig data, so, we will probably overfit a lot.
+
+### Fitting a better model
+
+Based on the variables that we observed as significannt in the previous analysis, we can fit better models.
+
+```{r}
+load("source/data_suic.RData")
+# Filter significant variables
+fit.logit = glm(INT_ACTUAL~., data, family = "binomial")
+s = summary(fit.logit)
+predictors = (s$coefficients[,4] < 0.05)[-1]
+
+data = data[, c(predictors,T)]
+
+# Split the data set
+source("https://raw.githubusercontent.com/jlaria/dsclass/master/R/prop.split.R")
+idx = prop.split(828, p=c(0.6,0.4))
+train = data[idx[[1]], ]
+validate = data[idx[[1]],]
+
+# Fit the model
+fit.logit = glm(INT_ACTUAL~., train, family = "binomial")
+summary(fit.logit)
+
+# Predict
+pred = predict(fit.logit, newdata = validate, type = "response")
+y_pred = ifelse(pred>0.5, 1, 0)
+t = table(y_pred, validate$INT_ACTUAL); t
+ccr = sum(diag(t))/sum(t); ccr
+tpr = t[2,2]/sum(t[,2]); tpr
+```
+
+### Movig the cut-point
+
+```{r}
+y_pred = ifelse(pred>0.35, 1, 0)
+t = table(y_pred, validate$INT_ACTUAL); t
+ccr = sum(diag(t))/sum(t); ccr
+tpr = t[2,2]/sum(t[,2]); tpr
+
+y_pred = ifelse(pred>0.15, 1, 0)
+t = table(y_pred, validate$INT_ACTUAL); t
+ccr = sum(diag(t))/sum(t); ccr
+tpr = t[2,2]/sum(t[,2]); tpr
+
+y_pred = ifelse(pred>0.05, 1, 0)
+t = table(y_pred, validate$INT_ACTUAL); t
+ccr = sum(diag(t))/sum(t); ccr
+tpr = t[2,2]/sum(t[,2]); tpr
+
+```
+
+### Computing the ROC curve
+
+```{r}
+library(ROCR)
+pred = prediction(pred, validate$INT_ACTUAL)
+perf = performance(pred, "tpr", "fpr")
+
+perf_df = data.frame(
+x = perf@x.values,
+y = perf@y.values,
+cutoff = perf@alpha.values
+)
+
+colnames(perf_df) = c("fpr", "tpr", "cutoff")
+ggplot(perf_df)+
+aes(x = fpr, y = tpr, color = cutoff)+
+geom_line()+
+geom_abline(intercept = 0, slope = 1, lty = "dotted")
+```
+```{r}
+perf = performance(pred, "acc")
+max(perf@y.values[[1]])
+optimal.cutoff = perf@x.values[[1]][which.max(perf@y.values[[1]])]
+optimal.cutoff
+
+```
+
+
+<!-- ## Bank data -->
+
+<!-- ```{r, eval=FALSE, echo=FALSE} -->
+
+<!-- data = read.csv("source/bank.csv", sep = ";") -->
+<!-- mean(data$y == "yes") -->
+<!-- data$duration = NULL -->
+
+<!-- data.1 = data[data$y=="yes",] -->
+<!-- data.0 = data[data$y=="no",] -->
+
+<!-- idx.0 = sample(nrow(data.0), 5000) -->
+<!-- data.0 = data[idx.0, ] -->
+
+<!-- df = rbind(data.0, data.1) -->
+<!-- df = df[sample(nrow(df)),] -->
+
+<!-- write.csv(df, file = "source/bank") -->
+
+<!-- save(df, df_test, file = "source/bank.RData") -->
+<!-- ``` -->
+
+
+<!-- In this section, we will use banking data. The binary classification goal is to predict if the client will subscribe a bank term deposit. -->
+
+<!-- We start loading the data into R. -->
+
+<!-- ```{r} -->
+<!-- load("source/bank.RData") -->
+<!-- ``` -->
+
+<!-- Here is some description of the variables. -->
+
+<!-- ```{bash, eval = F} -->
+<!-- Input variables: -->
+<!--    # bank client data: -->
+<!--    1 - age (numeric) -->
+
+<!--    2 - job : type of job (categorical: -->
+<!--    "admin.","blue-collar","entrepreneur","housemaid","management", -->
+<!--    "retired","self-employed","services","student","technician", -->
+<!--    "unemployed","unknown") -->
+
+<!--    3 - marital : marital status (categorical:  -->
+<!--    "divorced","married","single","unknown";  -->
+<!--    note: "divorced" means divorced or widowed) -->
+
+<!--    4 - education (categorical: -->
+<!--    "basic.4y","basic.6y","basic.9y","high.school","illiterate", -->
+<!--    "professional.course","university.degree","unknown") -->
+
+<!--    5 - default: has credit in default? (categorical: "no","yes","unknown") -->
+
+<!--    6 - housing: has housing loan? (categorical: "no","yes","unknown") -->
+
+<!--    7 - loan: has personal loan? (categorical: "no","yes","unknown") -->
+
+<!--    # related with the last contact of the current campaign: -->
+<!--    8 - contact: contact communication type (categorical: "cellular","telephone")  -->
+
+<!--    9 - month: last contact month of year  -->
+<!--    (categorical: "jan", "feb", "mar", ..., "nov", "dec") -->
+
+<!--   10 - day_of_week: last contact day of the week  -->
+<!--   (categorical: "mon","tue","wed","thu","fri") -->
+
+<!--    # other attributes: -->
+<!--   12 - campaign: number of contacts performed during this  -->
+<!--   campaign and for this client (numeric, includes last contact) -->
+
+<!--   13 - pdays: number of days that passed by after the client  -->
+<!--   was last contacted from a previous campaign (numeric; 999 means  -->
+<!--   client was not previously contacted) -->
+
+<!--   14 - previous: number of contacts performed before this  -->
+<!--   campaign and for this client (numeric) -->
+
+<!--   15 - poutcome: outcome of the previous marketing campaign  -->
+<!--   (categorical: "failure","nonexistent","success") -->
+
+<!--    # social and economic context attributes -->
+<!--   16 - emp.var.rate: employment variation rate -  -->
+<!--   quarterly indicator (numeric) -->
+
+<!--   17 - cons.price.idx: consumer price index - monthly indicator (numeric)     -->
+
+<!--   18 - cons.conf.idx: consumer confidence index - monthly indicator (numeric)  -->
+
+<!--   19 - euribor3m: euribor 3 month rate - daily indicator (numeric) -->
+
+<!--   20 - nr.employed: number of employees - quarterly indicator (numeric) -->
+
+<!--   Output variable (desired target): -->
+<!--   21 - y - has the client subscribed a term deposit? (binary: "yes","no") -->
+
+<!-- ``` -->
+
+<!-- To fit a logistic regression model, we use the function `glm`. -->
+
+<!-- ```{r} -->
+<!-- fit.logit = glm(y~., data = df, family = "binomial") -->
+<!-- summary(fit.logit) -->
+
+<!-- p = predict(fit.logit, df_test, type = "response") -->
+
+
+
+<!-- ``` -->
+

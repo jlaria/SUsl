@@ -1,0 +1,141 @@
+---
+title: "Practice time!"
+output:
+  html_document:
+    highlight: kate
+    theme: lumen
+    toc: no
+    toc_float: no
+  pdf_document:
+    toc: no
+bibliography: refs.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = T, cache = T, fig.width = 4, fig.height = 3, fig.align = "center")
+```
+
+# k-means Clustering
+
+## Data
+
+In this class, we are going to use a dataset from @weber1974structure
+about protein consumption in european countries in the 70s.
+
+First, we load the data file.
+
+```{r}
+data.protein = read.csv("source/protein.csv")
+```
+
+To inspect the data frame, we use the `head` function.
+
+```{r, eval=FALSE}
+head(data.protein)
+dim(data.protein)
+```
+
+```{r, echo=FALSE}
+knitr::kable(head(data.protein))
+dim(data.protein)
+```
+
+There are 25 countries and 10 variables, including variable `Country`, which contains unique information about each row. We must get rid of variable `Country` (because it is not numeric, and it is not an actual variable), without losing its information. This can be achieved by assigning `rownames`.
+
+```{r}
+rownames(data.protein) = data.protein$Country
+```
+
+Now we can remove variable `Country`.
+
+```{r}
+data.protein$Country = NULL
+```
+
+```{r, eval=FALSE}
+head(data.protein)
+```
+
+```{r, echo=FALSE}
+knitr::kable(head(data.protein))
+```
+
+As we can observe, variables in this data set are not measured in the same ranges. For instance, `Cereals` takes high values compared with the rest. In order to avoid bias in the result of the analysis, due to the differences in scale among the variables, we have to scale the data matrix. 
+
+```{r}
+data.protein = as.data.frame(scale(data.protein))
+```
+
+```{r, echo=FALSE}
+knitr::kable(head(data.protein), digits = 2)
+```
+
+## K-means clustering
+
+To perform k-means clustering we will use the function `kmeans` with a (previously scaled) data frame, in this case `data.protein`. We have to specify the number of clusters that we want (5 here).
+
+```{r}
+km = kmeans(data.protein, centers = 5, nstart = 25)
+km$cluster
+```
+
+As shown above, the function `kmeans` returns a list object, with a `cluster` field, which is a vector the same length as the data frame, denoting the cluster each row (country, in our example) belongs to.
+
+To visualize the clustering, we can use the function `fviz_cluster` from the `factoextra` library. This function visualizes the data using the first two principal components, which we are going to study in next sessions.
+
+```{r}
+library(factoextra)
+
+fviz_cluster(km, data = data.protein, labelsize = 6)
+```
+
+We can try changing the number of clusters.
+
+```{r}
+km = kmeans(data.protein, centers = 3, nstart = 25)
+fviz_cluster(km, data = data.protein, labelsize = 6)
+```
+
+### Computing the optimal number of clusters
+
+The idea behind k-means clustering is obtaining clusters with the minimum WSS (within cluster sum of squares), which measures how compact clusters are. We way try selecting the number of clusters (the parameter `centers`) that minimizes the WSS (`km$tot.withinss`), however, WSS always decreases, as the number of clusters increases.
+
+The elbow method evaluates the WSS with respect to the number of clusters, looking for the first point in which there is a notable change in the curve, that is, adding a new group does not considerably improves the WSS with respect to the previous.
+
+```{r}
+fviz_nbclust(data.protein, kmeans, method = "wss", nstart = 25)+
+  labs(subtitle = "Elbow method")+
+  geom_vline(xintercept = 4, linetype = 2)
+
+km = kmeans(data.protein, centers = 4, nstart = 25)
+fviz_cluster(km, data = data.protein, labelsize = 6)
+```
+
+## Exercises
+
+### Exercise 1
+
+a. Use `ggplot` to describe the relatioship between `Milk` and `RedMeat` consumption. 
+
+b. Introduce a color aesthetic to represent variable `Cereals` in the same plot.
+
+```{r, include=FALSE}
+library(ggplot2)
+
+ggplot(data.protein) + 
+  aes(x = Milk, y = RedMeat)+
+  geom_point()
+
+ggplot(data.protein) + 
+  aes(x = Milk, y = RedMeat, color = Cereals)+
+  geom_point()
+
+
+```
+
+c. How would you transform variable `Fish` into a factor variable with two levels (`high` and `low`), using the median as cutoff ?
+
+
+--- 
+
+## References

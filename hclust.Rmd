@@ -1,0 +1,136 @@
+---
+title: "Practice time!"
+output:
+  html_document:
+    highlight: kate
+    theme: lumen
+    toc: no
+    toc_float: no
+  pdf_document:
+    toc: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = T, cache = T, fig.width = 4, fig.height = 3, fig.align = "center")
+```
+
+# Hierarchical clustering
+
+## Data
+
+In this session, we are going to continue using the `protein.csv` data set from previous session.
+We start by loading and preparing the data set.
+
+```{r}
+data.protein = read.csv("source/protein.csv")
+rownames(data.protein) = data.protein$Country
+data.protein$Country = NULL
+data.protein = as.data.frame(scale(data.protein))
+```
+
+## Creating an agglomerative cluster
+
+To create a hierarchical agglomerative cluster, we will use the function `hclust` from R base. The basic syntax of this function is `hclust(d, method)`, where `d` is a matrix of pairwise distaces between the observations and `method` describes the criterion used to join different clusters.
+
+To compute `d`,  we can use the function `dist`.
+
+```{r}
+d = dist(data.protein)
+```
+```{r, echo=F}
+knitr::kable(as.matrix(d)[1:6, 1:6])
+```
+
+Function `dist` by default computes the euclidean distance, but we can specify other distances as well, with the parameter `method`.
+
+```{r}
+set.seed(2018)
+hc = hclust(d, method = "complete")
+hc
+```
+
+We can plot the resultant dendrogram with the package `factoextra`.
+
+```{r}
+library(factoextra)
+
+fviz_dend(hc, k = 4, cex=0.5)
+```
+
+### Linkages: Parameter `method` in `hclust`
+
+Varying the parameter `method` in `hclust` function call, produces different dendrogams.
+
+```{r}
+hc = hclust(d, method = "single")
+fviz_dend(hc, k = 4, cex=0.5)+labs(subtitle = "Single linkage")
+
+
+hc = hclust(d, method = "average")
+fviz_dend(hc, k = 4, cex=0.5)+labs(subtitle = "Average linkage")
+
+```
+
+### Method `cutree`
+
+Function `cutree` makes a horizontal cut in the dendrogram. We can provide either one of `k` (number of groups) or `h` (height at which to cut the tree)
+
+```{r}
+cutree(hc, k = 4)
+```
+
+Notice that `cutree` returns a named vector with the same structure as field `cluster` returned by the function `kmeans`.
+
+# Color quantization with kmeans
+
+In this part, we will illustrate the use of kmeans in image segmentation (color quantization). We will use the `OpenImageR` library for R.
+
+We start by downloading and reading the picture into R.
+
+```{r}
+library(OpenImageR)
+
+#url = 'http://kiwi.uc3m.es/datos-curso-deloitte/Cave1.png'
+#download.file(url, destfile = 'Cave1.png')
+
+img = readImage('source/Cave1.png')
+dim(img)
+```
+
+This picture has a resolution of `514 x 381` px, separated in three color chanels (R, G, B), thus we actually have `381*514=195834` observations and `3` variables. We can use the function `imageShow` to plot the picture.
+
+```{r}
+imageShow(img)
+```
+
+Since this is an example, we are going to resize this picture to a lower resolution, so `kmeans` runs faster.
+
+```{r}
+img1 = resizeImage(img, width = 190, height = 257, method = "bilinear")
+dim(img1)
+imageShow(img1)
+```
+
+Next, we transform our image, which is a `160 x 267 x 3` array, into a `42720 x 3` matrix.
+
+```{r}
+img1.vect = apply(img1, 3, as.vector)
+dim(img1.vect)
+```
+
+We are now ready to cluster our data using `kmeans`.
+
+```{r}
+set.seed(2018)
+km = kmeans(img1.vect, centers = 4)
+```
+
+Next, we substitute each pixel by the center of its cluster, and take the new segmented image to the original format.
+
+```{r}
+img2 = km$centers[km$cluster,]
+dim(img2) = dim(img1)
+
+imageShow(img2)
+```
+
