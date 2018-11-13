@@ -13,7 +13,7 @@ header-includes: \usepackage{xcolor}
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, collapse = T, cache = T, fig.width = 4, fig.height = 3, fig.align = "center")
+knitr::opts_chunk$set(echo = TRUE, collapse = F, cache = T, fig.width = 4, fig.height = 3, fig.align = "center")
 ```
 
 # k Nearest Neighbor Classifiers
