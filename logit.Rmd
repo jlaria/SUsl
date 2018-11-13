@@ -100,7 +100,7 @@ We start loading the data set.
 load("source/data_suic.RData")
 ```
 
-A first inspection of `data` reveals some interesting details. This whole data set is binary, and the response variable, `INT_ATUAL`, has a proportion of ones of `r mean(data$INT_ACTUAL==1)`.
+A first inspection of `data` reveals some interesting details. This whole data set is binary, and the response variable, `INT_ACTUAL`, has a proportion of ones of `r mean(data$INT_ACTUAL==1)`.
 
 This means that the worst accuracy we should expect is higger than `r 100-mean(data$INT_ACTUAL==1)*100`%.
 

@@ -1,0 +1,397 @@
+---
+title: "Statistical Learning"
+author: "Juan C. Laria"
+date: "2018/11/14"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(echo = TRUE, collapse = T, cache = T, fig.width = 10, fig.height = 8, fig.align = "center")
+```
+
+class: inverse, center, middle
+
+#... with `r icon::fa("r-project")`
+---
+class: inverse, center, middle
+
+# Getting Started with k Nearest Neighbors
+
+---
+```{r, echo=FALSE}
+library(ggplot2)
+library(MASS)
+library(class)
+
+load("source/tumor.RData")
+
+theme_set(theme_classic()+theme(text = element_text(size=20))) 
+
+ggplot(df)+
+  aes(x = age, y = tumor_size, color = recovery)+
+  geom_point(size = 4)
+ 
+```
+---
+
+```{r, echo=FALSE}
+ggplot(df)+
+  geom_point(aes(x = age, y = tumor_size, color = recovery), size = 4)+
+  geom_point(aes(x = 50, y = 0.6), pch = 21, size = 6)
+```
+---
+
+```{r, echo=FALSE}
+library(ggplot2)
+library(dsclass)
+
+X = scale(df[,-3])
+p = knn_viz(X, df$recovery, k = 5, prob_size = T)
+p + labs(x = "age (scaled)", y = "tumor_size (scaled)")+
+  geom_point(aes(x = (50 - 51.72)/10.37, y = (0.6-0.748)/0.6), pch = 21, size = 6, stroke=2)
+
+```
+
+---
+class: center, middle
+
+# How does it work?
+
+
+---
+# Euclidean distance 
+
+$$d(\mathbf{x}_1, \mathbf{x}_2) = ((\mathbf{x}_1-\mathbf{x}_2)'(\mathbf{x}_1-\mathbf{x}_2) )^{1/2} = \sqrt{\sum_{j=1}^p (x_{1j} - x_{2j})^2}.$$
+---
+# What does it do?
+
+$$k=5$$
+---
+# What does it do?
+
+```{r, echo=FALSE, fig.height=6}
+g = ggplot(df)+
+  geom_point(aes(x = X[,1], y = X[,2], color = df$recovery), size = 4)+
+  geom_point(aes(x = (50 - 51.72)/10.37, y = (0.6-0.748)/0.6), pch = 21, size = 6, stroke=2)+labs(x = "age (scaled)", y = "tumor_size (scaled)", color = "recovery")+
+  coord_fixed()
+g
+```
+---
+# What does it do?
+
+```{r, echo=FALSE, fig.height=6}
+x = c((50 - 51.72)/10.37,(0.6-0.748)/0.6)
+d =  apply(X, 1, function(y){sqrt(sum((x-y)^2))})
+id = order(d, decreasing = F)
+g = ggplot()+
+  geom_point(aes(x = X[,1], y = X[,2], color = df$recovery), size = 4, alpha=0.2)+
+  geom_point(aes(x = (50 - 51.72)/10.37, y = (0.6-0.748)/0.6), pch = 21, size = 6, stroke=2)+ labs(x = "age (scaled)", y = "tumor_size (scaled)", color = "recovery")
+g = g+geom_point(aes(x = X[id[1],1], y = X[id[1], 2], color = df$recovery[id[1]]), size = 5, alpha = 1)+ coord_fixed()
+g
+```
+---
+# What does it do?
+```{r, echo=FALSE, fig.height=6}
+g = g + geom_point(aes(x = X[id[2],1], y = X[id[2], 2], color = df$recovery[id[2]]), size = 5, alpha = 1)
+g
+```
+---
+# What does it do?
+```{r, echo=FALSE, fig.height=6}
+g = g + geom_point(aes(x = X[id[3],1], y = X[id[3], 2], color = df$recovery[id[3]]), size = 5, alpha = 1)
+g
+```
+---
+# What does it do?
+```{r, echo=FALSE, fig.height=6}
+g = g + geom_point(aes(x = X[id[4],1], y = X[id[4], 2], color = df$recovery[id[4]]), size = 5, alpha = 1)
+g
+```
+---
+# What does it do?
+```{r, echo=FALSE, fig.height=6}
+g = g + geom_point(aes(x = X[id[5],1], y = X[id[5], 2], color = df$recovery[id[5]]), size = 5, alpha = 1)
+g
+```
+---
+# What does it do?
+```{r, echo=FALSE, fig.height=6}
+g = g + geom_point(aes(x = x[1], y = x[2], color = "Good"), size = 5, alpha = 1)
+g
+```
+---
+class: center, middle
+
+# Practice time!
+
+`r icon::fa("laptop-code", size = 3)` 
+
+`r icon::fa("firefox", size = 1)` https://jlaria.github.io/SUsl/knn
+
+`r icon::fa("file-code", size = 1)` https://raw.githubusercontent.com/jlaria/SUsl/master/source/knn_script.R
+---
+class: center, middle, inverse
+
+# Lunch time!
+
+`r icon::fa("utensils", size = 5)`
+
+---
+class: center, middle, inverse
+
+# Logistic Regression
+
+---
+
+```{r, echo=FALSE}
+load("source/sales.RData")
+theme_set(theme_classic()+theme(text = element_text(size=20))) 
+ggplot(df)+
+  aes(x = Age, y = as.numeric(Buy)-1, color = Buy)+
+  geom_point(size = 5)+
+  labs(y = "Buy")
+```
+
+
+---
+# The intuition
+
+We can think of the action of buying the product as a random variable defined as,
+
+$$Y = \left\{ 0, \mbox{ Not buying} \atop 1, \quad \quad \mbox{buying} \right.$$
+--
+Conditioning $Y$ on the value of $X$, we can model the following probabilities.
+
+$$ P(Y=1 | X = x) = p(x), $$
+$$ P(Y = 0 | X = x) = 1-p(x). $$
+--
+This means that $Y|X=x$ follows a Bernoulli distribution with probability of success $p(x)$.
+Instead of modelling the response $Y$, we model $p(x)$.
+
+---
+
+```{r, echo=FALSE}
+load("source/sales.RData")
+theme_set(theme_classic()+theme(text = element_text(size=20))) 
+ggplot(df)+
+  aes(x = Age, y = as.numeric(Buy)-1, color = Buy)+
+  geom_point( size = 5)+
+  geom_abline( slope = 1/50, intercept = -20/50, linetype = 2)+
+  labs(y = expression(hat(p)(x)), x = "x")
+```
+
+---
+# The intuition
+
++ If we wanted to work with linear functions, say $\beta_0 + \beta X$, it shouldn't be $p(x)$ the function to be approximated. Notice that,
+
+    + $0 \le p \le 1$
+--
++ Then, the *odds*, defined as $p/(1-p)$ are such that,
+
+    + $0 \le p/(1-p) \le +\infty$
+--
+
++ The odds can be approximated better by a linear function, but notice that, for $p = 0.5$, $p/(1-p) = 1$. This means that for $x$ such that $p(x)<0.5$, the odds are between $0$ and $1$, and for $x$ such that  $p(x) > 0.5$, the odds are between $1$ and $\infty$. 
+--
+
++ To tackle this unbalance, we can take logarithms.
+
+    + $-\infty \le \log(p/(1-p)) \le +\infty$
+---
+# The intuition
+
++ The *log-odds* may be the perfect candidates for a linear approximation.
+$$\log\left(\frac{p}{1-p}\right) = \beta_0 + \beta X$$
++ Taking $p$ out,
+$$p = \left[1 + \exp(-\beta_0 - \beta X) \right]^{-1}$$
+---
+```{r, echo=FALSE}
+load("source/sales.RData")
+theme_set(theme_classic()+theme(text = element_text(size=20))) 
+x = 20:70
+y = as.numeric(df$Buy)-1
+p1 = (1+exp(+24.8621 - 0.5864*x))^-1
+
+ggplot()+
+  geom_point(aes(x = df$Age, y = y, color = df$Buy), size = 5)+
+  geom_line(aes(x = x, y = p1))+
+  labs(y = expression(hat(p)(x)), x = "x", color = "Buy")
+```
+---
+```{r, echo=FALSE}
+load("source/sales.RData")
+theme_set(theme_classic()+theme(text = element_text(size=20))) 
+x = 20:70
+y = as.numeric(df$Buy)-1
+p1 = (1+exp(+24.8621 - 0.5864*x))^-1
+
+ggplot()+
+  geom_point(aes(x = df$Age, y = (1+exp(+24.8621 - 0.5864*df$Age))^-1, color = df$Buy), size = 5)+
+  geom_line(aes(x = x, y = p1))+
+  labs(y = expression(hat(p)(x)), x = "x", color = "Buy")
+```
+---
+```{r, echo=FALSE}
+load("source/sales.RData")
+theme_set(theme_classic()+theme(text = element_text(size=20))) 
+x = 20:70
+y = as.numeric(df$Buy)-1
+p1 = (1+exp(+24.8621 - 0.5864*x))^-1
+
+ggplot()+
+  geom_point(aes(x = df$Age, y = (1+exp(+24.8621 - 0.5864*df$Age))^-1, color = df$Buy), size = 5)+
+  geom_line(aes(x = x, y = p1))+
+  geom_hline(yintercept = 0.5, linetype = "dashed")+
+  labs(y = expression(hat(p)(x)), x = "x", color = "Buy")
+```
+---
+# How does it work?
+
+Let $y_1, y_2, \ldots y_N$ be the responses, and $p_1, p_2, \ldots p_N$ the underlying probabilities that generated them from the Bernoulli model. Then, the likelihood is,
+$$L(y_1\ldots y_N|p_1\ldots p_N)  =
+	\prod_{i=1}^{N} p_i^{y_i} (1-p_i)^{(1-y_i)}
+	= \prod_{i=1}^{N} \left( \frac{p_i}{1-p_i} \right)^{y_i} (1-p_i)$$
+Then, the log-likelihood becomes,
+$$l(y_1\ldots y_N|p_1\ldots p_N) = \sum_{i=1}^{N}\left\{ y_i\log\left(\frac{p_i}{1-p_i}\right) + \log(1-p_i)\right\}$$
+Let $\eta_i = \mathbf{x}_i^T \mathbf{\beta},$ and notice that the odds can be written in terms of $\eta_i$ as
+$$\frac{p_i}{1-p_i} = \exp(\eta_i)$$
+---
+# How does it work?
+
+Then, the log-likelihood can be written
+$$l(y_1\ldots y_N|p_1\ldots p_N)=\displaystyle{\sum_{i=1}^{N}\left\{y_i \eta_i + \log([1+\exp(\eta_i)]^{-1})\right\}}$$
+$$l(y_1\ldots y_N|p_1\ldots p_N)=\displaystyle{\sum_{i=1}^{N}\left\{
+		y_i \eta_i - \log(1+e^{\eta_i})
+		\right\}}$$
+Therefore, the objective of logistic regression is to minimize with respect to $\mathbf{\beta}$ the function
+$$R(\mathbf{\beta}) = \sum_{i=1}^{N} \log\left( 1 + \exp(\mathbf{x}_i^T \mathbf{\beta}) \right) - \sum_{i=1}^{N} y_i \mathbf{x}_i^T \mathbf{\beta}$$
+---
+class: center, middle
+
+# Practice time!
+
+`r icon::fa("laptop-code", size = 3)` 
+
+`r icon::fa("firefox", size = 1)` https://jlaria.github.io/SUsl/logit
+
+`r icon::fa("file-code", size = 1)` https://raw.githubusercontent.com/jlaria/SUsl/master/source/logit_script.R
+---
+class: center, middle, inverse
+
+`r icon::fa("connectdevelop", size=5, color="cyan")`
+
+# Unsupervised statistical learning
+## k-means clustering
+## Hierarchical clustering
+---
+# The intuition
+
+https://www.naftaliharris.com/blog/visualizing-k-means-clustering/
+
+---
+class: center, middle, inverse
+
+`r icon::fa("magic", size=5)`
+# The ~~magic~~ math behind k-means
+
+---
+# Within-cluster scatter
+
++ Let $K$ be the number of clusters (fixed). A clustering of points $x_1, x_2 \ldots x_n$ is a function $C$ that assigns each observation  $x_i$ to a group $k\in \{1 \ldots K\}$.
+
+> Notation
+
++ $C(i)=k$ means that $x_i$ is assigned to group $k$.
+
++ $n_k$ is the number of points in group $k$.
+
+> Definition
+
++ The within-cluster scatter is defined as
+$$W=\sum_{k=1}^{K} \frac{1}{n_k} \sum_{C(i)=k,\atop C(i')=k} D(x_i, x_{i'}).$$
+---
+# Finding the best group assignments
+
++ Smaller $W$ the better assignments.
+
++ Why don't we just find the clustering $C$ that minimizes $W$?
+
+--
+
++ Trying all possible assignments of $n$ points into $K$ groups requires a number of operations of order
+$$A(n,K)=\frac{1}{K!} \sum_{k=1}^{K} (-1)^{K-k}\left(K\atop k\right) k^n \approx K^n.$$
+
++ Notice that $A(10,4)=34105$ and $A(25,4)\approx 5 \cdot 10^{13}$.
+
++ BigData problems are clearly bigger than $n=25, K=4$.
+
++ We will have to look for an approximate optimal solution.
+		
+---
+# k means
+
+K-means algorithm is intended for situations in which,
+
++ all variables are of *quantitative* type,
+
++ **squared Euclidean** distance 
+$$D(x_i, x_{i'})= \sum_{j=1}^{p} (x_{ij}-x_{i'j})^2=\|x_i-x_{i'}\|_2^2$$
+is chosen as the dissimilarity measure.
+
+---
+# K-means minimization problem
+
++ In K-means algorithm, we want to minimize over clusterings $C$ the within-cluster scatter
+$$\sum_{k=1}^{K} \frac{1}{n_k} \sum_{C(i)=k,\atop C(i')=k} \|x_i- x_{i'}\|_2^2.$$
++ It is equivalent to minimizing over $C$ the within-cluster variation
+$$W=\sum_{k=1}^{K} \sum_{C(i)=k} \|x_i-\bar{x}_k\|_2^2,$$
+where
+$$\bar{x}_k=\frac{1}{n_k}\sum_{C(i)=k} x_i.$$
+---
+# Rewriting the minimization
+
++ We want to choose $C$ to minimize,
+$$\sum_{k=1}^{K} \sum_{C(i)=k} \|x_i-\bar{x}_k\|_2^2.$$
+
++ For any $z_1, \ldots z_m \in R^p$, the quantity 		$\sum_{i=1}^{m} \|z_i-c\|_2^2$ is minimized by taking $c=\bar{z}$.
+
++ So our problem is the same as minimizing the enlarged criterion
+$$\sum_{k=1}^{K} \sum_{C(i)=k} \|x_i-c_k\|_2^2,$$ over both clusterings $C$ and $c_1,\ldots c_K\in R^p$. 
+
++  The $K$-means clustering algorithm approximately minimizes the enlarged criterion by alternately minimizing over $C$ and $c_1, \ldots c_K$.
+---
+class: center, middle
+
+# Practice time!
+
+`r icon::fa("laptop-code", size = 3)` 
+
+`r icon::fa("firefox", size = 1)` https://jlaria.github.io/SUsl/kmeans
+
+`r icon::fa("firefox", size = 1)` https://jlaria.github.io/SUsl/hclust
+---
+
+# k-means properties
+
++ Within-cluster variation *decreases* with each iteration of the algorithm.
+
++ It always *converges*, no matter the initial cluster centers ( it takes less than $K^n$ iterations)
+
++ The solution depends on the initial (random) cluster assignments.
+
++ $K$-means algorithm finds a *local* rather than a global optimum. For this reason, it is important to run the algorithm multiple times from different initial configurations. Then, one selects the *best* solution (in terms of within-cluster variation).
+
+---
+class: center, middle, inverse
+# Thanks!
+
+Slides created via the R package [**xaringan**](https://github.com/yihui/xaringan).
+
+[remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
