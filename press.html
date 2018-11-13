@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Statistical Learning</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Juan C. Laria" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+    <link href="libs/font-awesome/css/fontawesome-all.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Statistical Learning
+### Juan C. Laria
+### 2018/11/14
+
+---
+
+
+
+class: inverse, center, middle
+
+#... with <i class="fab  fa-r-project "></i>
+---
+class: inverse, center, middle
+
+# Getting Started with k Nearest Neighbors
+
+---
+&lt;img src="press_files/figure-html/unnamed-chunk-1-1.png" style="display: block; margin: auto;" /&gt;
+---
+
+&lt;img src="press_files/figure-html/unnamed-chunk-2-1.png" style="display: block; margin: auto;" /&gt;
+---
+
+&lt;img src="press_files/figure-html/unnamed-chunk-3-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+class: center, middle
+
+# How does it work?
+
+
+---
+# Euclidean distance 
+
+`$$d(\mathbf{x}_1, \mathbf{x}_2) = ((\mathbf{x}_1-\mathbf{x}_2)'(\mathbf{x}_1-\mathbf{x}_2) )^{1/2} = \sqrt{\sum_{j=1}^p (x_{1j} - x_{2j})^2}.$$`
+---
+# What does it do?
+
+`$$k=5$$`
+---
+# What does it do?
+
+&lt;img src="press_files/figure-html/unnamed-chunk-4-1.png" style="display: block; margin: auto;" /&gt;
+---
+# What does it do?
+
+&lt;img src="press_files/figure-html/unnamed-chunk-5-1.png" style="display: block; margin: auto;" /&gt;
+---
+# What does it do?
+&lt;img src="press_files/figure-html/unnamed-chunk-6-1.png" style="display: block; margin: auto;" /&gt;
+---
+# What does it do?
+&lt;img src="press_files/figure-html/unnamed-chunk-7-1.png" style="display: block; margin: auto;" /&gt;
+---
+# What does it do?
+&lt;img src="press_files/figure-html/unnamed-chunk-8-1.png" style="display: block; margin: auto;" /&gt;
+---
+# What does it do?
+&lt;img src="press_files/figure-html/unnamed-chunk-9-1.png" style="display: block; margin: auto;" /&gt;
+---
+# What does it do?
+&lt;img src="press_files/figure-html/unnamed-chunk-10-1.png" style="display: block; margin: auto;" /&gt;
+---
+class: center, middle
+
+# Practice time!
+
+<i class="fas  fa-laptop-code fa-3x "></i> 
+
+<i class="fab  fa-firefox "></i> https://jlaria.github.io/SUsl/knn
+
+<i class="fas  fa-file-code "></i> https://raw.githubusercontent.com/jlaria/SUsl/master/source/knn_script.R
+---
+class: center, middle, inverse
+
+# Lunch time!
+
+<i class="fas  fa-utensils fa-5x "></i>
+
+---
+class: center, middle, inverse
+
+# Logistic Regression
+
+---
+
+&lt;img src="press_files/figure-html/unnamed-chunk-11-1.png" style="display: block; margin: auto;" /&gt;
+
+
+---
+# The intuition
+
+We can think of the action of buying the product as a random variable defined as,
+
+`$$Y = \left\{ 0, \mbox{ Not buying} \atop 1, \quad \quad \mbox{buying} \right.$$`
+--
+Conditioning `\(Y\)` on the value of `\(X\)`, we can model the following probabilities.
+
+$$ P(Y=1 | X = x) = p(x), $$
+$$ P(Y = 0 | X = x) = 1-p(x). $$
+--
+This means that `\(Y|X=x\)` follows a Bernoulli distribution with probability of success `\(p(x)\)`.
+Instead of modelling the response `\(Y\)`, we model `\(p(x)\)`.
+
+---
+
+&lt;img src="press_files/figure-html/unnamed-chunk-12-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# The intuition
+
++ If we wanted to work with linear functions, say `\(\beta_0 + \beta X\)`, it shouldn't be `\(p(x)\)` the function to be approximated. Notice that,
+
+    + `\(0 \le p \le 1\)`
+--
++ Then, the *odds*, defined as `\(p/(1-p)\)` are such that,
+
+    + `\(0 \le p/(1-p) \le +\infty\)`
+--
+
++ The odds can be approximated better by a linear function, but notice that, for `\(p = 0.5\)`, `\(p/(1-p) = 1\)`. This means that for `\(x\)` such that `\(p(x)&lt;0.5\)`, the odds are between `\(0\)` and `\(1\)`, and for `\(x\)` such that  `\(p(x) &gt; 0.5\)`, the odds are between `\(1\)` and `\(\infty\)`. 
+--
+
++ To tackle this unbalance, we can take logarithms.
+
+    + `\(-\infty \le \log(p/(1-p)) \le +\infty\)`
+---
+# The intuition
+
++ The *log-odds* may be the perfect candidates for a linear approximation.
+`$$\log\left(\frac{p}{1-p}\right) = \beta_0 + \beta X$$`
++ Taking `\(p\)` out,
+`$$p = \left[1 + \exp(-\beta_0 - \beta X) \right]^{-1}$$`
+---
+&lt;img src="press_files/figure-html/unnamed-chunk-13-1.png" style="display: block; margin: auto;" /&gt;
+---
+&lt;img src="press_files/figure-html/unnamed-chunk-14-1.png" style="display: block; margin: auto;" /&gt;
+---
+&lt;img src="press_files/figure-html/unnamed-chunk-15-1.png" style="display: block; margin: auto;" /&gt;
+---
+# How does it work?
+
+Let `\(y_1, y_2, \ldots y_N\)` be the responses, and `\(p_1, p_2, \ldots p_N\)` the underlying probabilities that generated them from the Bernoulli model. Then, the likelihood is,
+`$$L(y_1\ldots y_N|p_1\ldots p_N)  =
+	\prod_{i=1}^{N} p_i^{y_i} (1-p_i)^{(1-y_i)}
+	= \prod_{i=1}^{N} \left( \frac{p_i}{1-p_i} \right)^{y_i} (1-p_i)$$`
+Then, the log-likelihood becomes,
+`$$l(y_1\ldots y_N|p_1\ldots p_N) = \sum_{i=1}^{N}\left\{ y_i\log\left(\frac{p_i}{1-p_i}\right) + \log(1-p_i)\right\}$$`
+Let `\(\eta_i = \mathbf{x}_i^T \mathbf{\beta},\)` and notice that the odds can be written in terms of `\(\eta_i\)` as
+`$$\frac{p_i}{1-p_i} = \exp(\eta_i)$$`
+---
+# How does it work?
+
+Then, the log-likelihood can be written
+`$$l(y_1\ldots y_N|p_1\ldots p_N)=\displaystyle{\sum_{i=1}^{N}\left\{y_i \eta_i + \log([1+\exp(\eta_i)]^{-1})\right\}}$$`
+`$$l(y_1\ldots y_N|p_1\ldots p_N)=\displaystyle{\sum_{i=1}^{N}\left\{
+		y_i \eta_i - \log(1+e^{\eta_i})
+		\right\}}$$`
+Therefore, the objective of logistic regression is to minimize with respect to `\(\mathbf{\beta}\)` the function
+`$$R(\mathbf{\beta}) = \sum_{i=1}^{N} \log\left( 1 + \exp(\mathbf{x}_i^T \mathbf{\beta}) \right) - \sum_{i=1}^{N} y_i \mathbf{x}_i^T \mathbf{\beta}$$`
+---
+class: center, middle
+
+# Practice time!
+
+<i class="fas  fa-laptop-code fa-3x "></i> 
+
+<i class="fab  fa-firefox "></i> https://jlaria.github.io/SUsl/logit
+
+<i class="fas  fa-file-code "></i> https://raw.githubusercontent.com/jlaria/SUsl/master/source/logit_script.R
+---
+class: center, middle, inverse
+
+<i class="fab  fa-connectdevelop fa-5x " style="color:cyan;"></i>
+
+# Unsupervised statistical learning
+## k-means clustering
+## Hierarchical clustering
+---
+# The intuition
+
+https://www.naftaliharris.com/blog/visualizing-k-means-clustering/
+
+---
+class: center, middle
+
+# Practice time!
+
+<i class="fas  fa-laptop-code fa-3x "></i> 
+
+<i class="fab  fa-firefox "></i> https://jlaria.github.io/SUsl/kmeans
+
+<i class="fab  fa-firefox "></i> https://jlaria.github.io/SUsl/hclust
+---
+class: center, middle
+# Thanks!
+
+Slides created via the R package [**xaringan**](https://github.com/yihui/xaringan).
+
+[remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+})();
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
